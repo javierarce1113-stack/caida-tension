@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Caída de Tensión — IPSA</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f0;min-height:100vh;font-size:15px}
+
+  .header{background:#4a7c2f;color:#fff;padding:16px;text-align:center;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+  .header h1{font-size:16px;font-weight:600;margin:0}
+  .header p{font-size:11px;opacity:0.75;margin-top:2px}
+
+  .card{background:#fff;border-radius:12px;margin:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+  .sec-title{font-size:11px;color:#4a7c2f;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px}
+
+  /* Toggles sistema */
+  .sys-toggle{display:flex;border:2px solid #4a7c2f;border-radius:10px;overflow:hidden;margin-bottom:0}
+  .sys-toggle button{flex:1;padding:12px 6px;font-size:15px;background:#fff;border:none;cursor:pointer;color:#4a7c2f;font-weight:500;font-family:inherit;transition:background 0.15s,color 0.15s}
+  .sys-toggle button.active{background:#4a7c2f;color:#fff}
+
+  /* Toggle potencia tipo */
+  .pot-toggle{display:flex;background:#f0f4f0;border-radius:8px;padding:3px;margin-bottom:14px}
+  .pot-toggle button{flex:1;padding:9px 4px;font-size:13px;background:transparent;border:none;cursor:pointer;color:#666;border-radius:6px;font-family:inherit;transition:background 0.15s,color 0.15s}
+  .pot-toggle button.active{background:#fff;color:#4a7c2f;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.12)}
+
+  /* Campos */
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;color:#555;margin-bottom:5px;font-weight:500}
+  .field input,.field select{width:100%;padding:13px 12px;border:1.5px solid #d8d8d8;border-radius:9px;font-size:16px;font-family:inherit;color:#111;background:#fff;outline:none;appearance:none;-webkit-appearance:none;transition:border 0.15s}
+  .field input:focus,.field select:focus{border-color:#4a7c2f}
+  .field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+
+  /* Toggle HP/kW */
+  .pot-row{display:flex;gap:8px;align-items:flex-end}
+  .pot-row .field{flex:1;margin-bottom:0}
+  .unidad-toggle{display:flex;border:2px solid #4a7c2f;border-radius:9px;overflow:hidden;height:50px;min-width:100px}
+  .unidad-toggle button{flex:1;font-size:14px;font-weight:600;border:none;cursor:pointer;font-family:inherit;transition:background 0.15s,color 0.15s}
+
+  /* Panel calculado */
+  .calc-panel{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+  .calc-item{background:#f0f4f0;border-radius:9px;padding:10px 12px;text-align:center}
+  .calc-item .cl{font-size:11px;color:#777;display:block;margin-bottom:3px}
+  .calc-item .cv{font-size:17px;font-weight:700;color:#222}
+
+  /* Instalación */
+  .inst-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+  .inst-btn{padding:12px 4px;border:1.5px solid #d8d8d8;border-radius:9px;background:#fff;cursor:pointer;text-align:center;transition:all 0.15s;font-family:inherit}
+  .inst-btn.active{border-color:#4a7c2f;background:#f0f5eb}
+  .inst-btn .ii{font-size:20px;display:block;margin-bottom:5px}
+  .inst-btn .il{font-size:11px;color:#666;line-height:1.3}
+  .inst-btn.active .il{color:#4a7c2f;font-weight:600}
+  .inst-note{font-size:12px;color:#666;background:#f7f9f5;border:1px solid #d8e8d0;border-radius:8px;padding:10px 12px;line-height:1.6}
+
+  /* Chips impedancia */
+  .imp-chips{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .imp-chip{background:#f7f7f7;border-radius:8px;padding:10px 6px;text-align:center}
+  .imp-chip .il{font-size:11px;color:#888;display:block;margin-bottom:3px}
+  .imp-chip .iv{font-size:13px;font-weight:700;color:#222}
+
+  /* Barra ampacidad */
+  .amp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .amp-header span{font-size:13px;color:#555}
+  .amp-header strong{font-size:14px;color:#222}
+  .amp-track{height:12px;background:#e8e8e8;border-radius:6px;overflow:hidden}
+  .amp-fill{height:100%;border-radius:6px;transition:width 0.4s,background 0.3s;width:0%}
+  .amp-sub{display:flex;justify-content:space-between;font-size:11px;color:#999;margin-top:4px}
+  .amp-alert{border-radius:9px;padding:12px 14px;font-size:13px;font-weight:500;margin:10px 0;display:none;line-height:1.5}
+  .amp-alert.show{display:block}
+  .amp-alert.ok  {background:#eaf6f1;color:#1a7a57;border:1px solid #a0d8bc}
+  .amp-alert.warn{background:#fef6e4;color:#8a5c00;border:1px solid #f0cc70}
+  .amp-alert.over{background:#fdecea;color:#b71c1c;border:1px solid #f5a8a8}
+
+  /* Resultado principal */
+  .result-card{background:linear-gradient(135deg,#4a7c2f,#3a6020);border-radius:14px;padding:22px 16px;text-align:center;margin:4px 0}
+  .result-card .rl{color:rgba(255,255,255,0.75);font-size:13px;margin-bottom:6px}
+  .result-card .rv{color:#fff;font-size:42px;font-weight:800;line-height:1}
+  .result-card .rs{color:rgba(255,255,255,0.8);font-size:13px;margin-top:4px}
+
+  /* Sub resultados */
+  .result-sub{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .metric{background:#f4f6f4;border-radius:9px;padding:12px 6px;text-align:center;border:1px solid #e4e8e4}
+  .metric .ml{font-size:11px;color:#777;margin-bottom:4px}
+  .metric .mv{font-size:15px;font-weight:700;color:#222}
+
+  /* Barra ΔV */
+  .dv-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .dv-track{height:10px;background:#e8e8e8;border-radius:5px;overflow:hidden;margin-bottom:4px}
+  .dv-fill{height:100%;border-radius:5px;transition:width 0.4s,background 0.3s}
+  .dv-labels{display:flex;justify-content:space-between;font-size:11px;color:#aaa}
+
+  /* Fórmula */
+  .formula-box{background:#f7f9f5;border:1px solid #d8e8d0;border-radius:9px;padding:12px;font-size:12px;color:#444;font-family:'Courier New',monospace;line-height:2;white-space:pre-wrap;word-break:break-word;overflow-x:auto}
+
+  .divider{border:none;border-top:1px solid #eee;margin:0}
+  .footer{text-align:center;font-size:11px;color:#aaa;padding:14px 12px;line-height:1.7}
+
+  /* Tablet+ */
+  @media(min-width:560px){
+    .card{margin:14px auto;max-width:580px}
+    .header h1{font-size:18px}
+    .calc-panel{grid-template-columns:1fr 1fr 1fr 1fr}
+    .result-card .rv{font-size:48px}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Caída de Tensión en Conductores</h1>
+  <p>NEC 2020 · Table 9 &amp; 310.16 @ 90°C · IPSA</p>
+</div>
+
+<!-- Sistema -->
+<div class="card">
+  <p class="sec-title">Sistema eléctrico</p>
+  <div class="sys-toggle" id="modeToggle">
+    <button onclick="setMode('tri')">⚡ Trifásico</button>
+    <button onclick="setMode('mono')">↯ Monofásico</button>
+  </div>
+</div>
+
+<!-- Carga -->
+<div class="card">
+  <p class="sec-title">Datos de carga</p>
+
+  <div class="pot-toggle" id="ptoggle">
+    <button onclick="setPtipo('act')">Potencia activa</button>
+    <button onclick="setPtipo('kva')">Potencia aparente (kVA)</button>
+  </div>
+
+  <div class="pot-row" id="pot-row">
+    <div class="field">
+      <label id="pot-label">Potencia activa</label>
+      <input type="number" id="potencia" value="75" step="0.1" inputmode="decimal" oninput="calc()">
+    </div>
+    <div class="unidad-toggle" id="unidad-wrap">
+      <button id="btn-hp" onclick="setUnidad('hp')">HP</button>
+      <button id="btn-kw" onclick="setUnidad('kw')">kW</button>
+    </div>
+  </div>
+
+  <div style="height:14px"></div>
+
+  <div class="field">
+    <label>Factor de potencia (cos φ)</label>
+    <input type="number" id="fp" value="0.85" min="0.1" max="1" step="0.01" inputmode="decimal" oninput="calc()">
+  </div>
+
+  <div class="field">
+    <label>Tensión del sistema (V)</label>
+    <input type="number" id="vn" value="440" inputmode="numeric" oninput="calc()">
+  </div>
+
+  <div class="field" style="margin-bottom:0">
+    <label>Longitud del circuito (m)</label>
+    <input type="number" id="longitud" value="50" inputmode="numeric" oninput="calc()">
+  </div>
+</div>
+
+<!-- Panel calculado -->
+<div class="card">
+  <p class="sec-title">Valores calculados</p>
+  <div class="calc-panel">
+    <div class="calc-item"><span class="cl">HP</span><span class="cv" id="show-hp">—</span></div>
+    <div class="calc-item"><span class="cl">kW</span><span class="cv" id="show-kw">—</span></div>
+    <div class="calc-item"><span class="cl">kVA</span><span class="cv" id="show-kva">—</span></div>
+    <div class="calc-item"><span class="cl">Corriente (A)</span><span class="cv" id="show-i">—</span></div>
+  </div>
+</div>
+
+<!-- Conductor -->
+<div class="card">
+  <p class="sec-title">Conductor</p>
+  <div class="field">
+    <label>Material</label>
+    <select id="material" onchange="updateCalibre();calc()">
+      <option value="cu">Cobre (Cu)</option>
+      <option value="al">Aluminio (Al)</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Calibre AWG / kcmil</label>
+    <select id="calibre" onchange="calc()"></select>
+  </div>
+  <div class="field" style="margin-bottom:0">
+    <label>Conductores por fase</label>
+    <select id="cpf" onchange="calc()">
+      <option value="1">1 conductor por fase</option>
+      <option value="2">2 conductores por fase</option>
+      <option value="3">3 conductores por fase</option>
+      <option value="4">4 conductores por fase</option>
+      <option value="5">5 conductores por fase</option>
+      <option value="6">6 conductores por fase</option>
+    </select>
+  </div>
+</div>
+
+<!-- Instalación -->
+<div class="card">
+  <p class="sec-title">Tipo de instalación</p>
+  <div class="inst-grid">
+    <button class="inst-btn" id="btn-nm" onclick="setInst('nm')">
+      <span class="ii">&#9737;</span>
+      <span class="il">Conduit no magnético<br>(PVC / Al)</span>
+    </button>
+    <button class="inst-btn" id="btn-m" onclick="setInst('m')">
+      <span class="ii">&#9651;</span>
+      <span class="il">Conduit magnético<br>(acero)</span>
+    </button>
+    <button class="inst-btn" id="btn-bt" onclick="setInst('bt')">
+      <span class="ii">&#9783;</span>
+      <span class="il">Bandeja escalera<br>o malla</span>
+    </button>
+  </div>
+  <div class="inst-note" id="inst-note"></div>
+
+  <div style="height:14px"></div>
+  <p class="sec-title" style="margin-bottom:10px">Impedancias del conductor</p>
+  <div class="imp-chips">
+    <div class="imp-chip"><span class="il">R (Ω/km)</span><span class="iv" id="show-r">—</span></div>
+    <div class="imp-chip"><span class="il">X (Ω/km)</span><span class="iv" id="show-x">—</span></div>
+    <div class="imp-chip"><span class="il">Z (Ω/km)</span><span class="iv" id="show-z">—</span></div>
+  </div>
+</div>
+
+<!-- Ampacidad -->
+<div class="card">
+  <p class="sec-title">Ampacidad — NEC 310.16 @ 90°C (XHHW / RHH)</p>
+  <div class="amp-header">
+    <span>Carga del conductor</span>
+    <strong id="amp-pct-label">—</strong>
+  </div>
+  <div class="amp-track"><div class="amp-fill" id="amp-fill"></div></div>
+  <div class="amp-sub">
+    <span>0 A</span>
+    <span id="amp-max-label">Ampacidad: — A</span>
+    <span>100%+</span>
+  </div>
+  <div class="amp-alert" id="amp-alert"></div>
+</div>
+
+<!-- Resultado -->
+<div class="card">
+  <div class="result-card">
+    <p class="rl">Caída de tensión</p>
+    <p class="rv" id="res-pct">—</p>
+    <p class="rs" id="res-estado">—</p>
+  </div>
+
+  <div style="height:12px"></div>
+
+  <div class="result-sub">
+    <div class="metric"><p class="ml">ΔV (voltios)</p><p class="mv" id="res-dv">—</p></div>
+    <div class="metric"><p class="ml">V final</p><p class="mv" id="res-vf">—</p></div>
+    <div class="metric"><p class="ml">k (factor)</p><p class="mv" id="res-k">—</p></div>
+  </div>
+
+  <div style="height:14px"></div>
+
+  <div class="dv-header">
+    <span style="font-size:13px;color:#555">Nivel ΔV%</span>
+    <span id="status-lbl" style="font-size:13px;font-weight:700"></span>
+  </div>
+  <div class="dv-track"><div class="dv-fill" id="dv-fill"></div></div>
+  <div class="dv-labels"><span>0%</span><span>3%</span><span>5%+</span></div>
+</div>
+
+<!-- Fórmula -->
+<div class="card">
+  <p class="sec-title">Desarrollo del cálculo</p>
+  <div class="formula-box" id="formula-box">—</div>
+</div>
+
+<hr class="divider">
+<div class="footer">
+  NEC 2020 Table 9 (impedancias) · Table 310.16 @ 90°C (ampacidad) · IEEE 141 (bandeja)<br>
+  Herramienta de uso interno — IPSA
+</div>
+
+<script>
+const NEC9={
+  "14 AWG":    [10.160,10.490,null, null, 0.197,0.230],
+  "12 AWG":    [6.406, 6.562,null, null, 0.197,0.230],
+  "10 AWG":    [3.937, 4.003,null, null, 0.190,0.213],
+  "8 AWG":     [2.493, 2.559,4.003,4.134,0.187,0.213],
+  "6 AWG":     [1.608, 1.641,2.657,2.690,0.180,0.213],
+  "4 AWG":     [1.017, 1.050,1.673,1.706,0.177,0.203],
+  "3 AWG":     [0.804, 0.837,1.345,1.378,0.171,0.197],
+  "2 AWG":     [0.640, 0.673,1.050,1.083,0.171,0.197],
+  "1 AWG":     [0.509, 0.542,0.837,0.870,0.164,0.190],
+  "1/0 AWG":   [0.404, 0.427,0.656,0.689,0.161,0.187],
+  "2/0 AWG":   [0.322, 0.338,0.525,0.558,0.157,0.180],
+  "3/0 AWG":   [0.256, 0.272,0.414,0.440,0.151,0.177],
+  "4/0 AWG":   [0.203, 0.213,0.328,0.354,0.148,0.171],
+  "250 kcmil": [0.171, 0.180,0.276,0.295,0.148,0.164],
+  "300 kcmil": [0.144, 0.154,0.230,0.246,0.144,0.161],
+  "350 kcmil": [0.125, 0.131,0.197,0.213,0.141,0.157],
+  "400 kcmil": [0.108, 0.115,0.174,0.187,0.138,0.154],
+  "500 kcmil": [0.089, 0.095,0.141,0.151,0.135,0.151],
+  "600 kcmil": [0.075, 0.082,0.118,0.128,0.131,0.148],
+  "700 kcmil": [0.066, 0.072,0.102,0.112,0.131,0.145],
+  "750 kcmil": [0.062, 0.069,0.095,0.105,0.128,0.141],
+  "1000 kcmil":[0.046, 0.052,0.072,0.082,0.125,0.138],
+};
+const AMP90={
+  "14 AWG":    [25,  null],"12 AWG":    [30,  null],"10 AWG":    [40,  null],
+  "8 AWG":     [55,  45],  "6 AWG":     [75,  60],  "4 AWG":     [95,  75],
+  "3 AWG":     [115, 85],  "2 AWG":     [130, 100], "1 AWG":     [145, 115],
+  "1/0 AWG":   [170, 135], "2/0 AWG":   [195, 150], "3/0 AWG":   [225, 175],
+  "4/0 AWG":   [260, 205], "250 kcmil": [290, 230], "300 kcmil": [320, 255],
+  "350 kcmil": [350, 280], "400 kcmil": [380, 305], "500 kcmil": [430, 350],
+  "600 kcmil": [475, 385], "700 kcmil": [520, 420], "750 kcmil": [545, 440],
+  "1000 kcmil":[625, 545],
+};
+const INST_NOTES={
+  nm:"Conduit no magnético (PVC o aluminio): R y X de NEC 2020 Table 9.",
+  m :"Conduit magnético (acero): R igual, X ligeramente mayor por concentración de flujo magnético. NEC 2020 Table 9.",
+  bt:"Bandeja escalera o malla: R sin cambio, X = X_nm × 1.15 (IEEE 141 — conductores al aire con mayor separación entre fases)."
+};
+const HP2KW=0.7457;
+const G='#4a7c2f',W='#fff',GR='#999',LG='#eee';
+let modo='tri',inst='nm',ptipo='act',unidad='hp';
+
+function applyUnidad(){
+  const bh=document.getElementById('btn-hp'),bk=document.getElementById('btn-kw');
+  if(unidad==='hp'){
+    bh.style.cssText='background:'+G+';color:'+W+';font-weight:700;flex:1;font-size:14px;border:none;cursor:pointer;font-family:inherit';
+    bk.style.cssText='background:'+LG+';color:'+GR+';font-weight:500;flex:1;font-size:14px;border:none;cursor:pointer;font-family:inherit';
+  }else{
+    bk.style.cssText='background:'+G+';color:'+W+';font-weight:700;flex:1;font-size:14px;border:none;cursor:pointer;font-family:inherit';
+    bh.style.cssText='background:'+LG+';color:'+GR+';font-weight:500;flex:1;font-size:14px;border:none;cursor:pointer;font-family:inherit';
+  }
+}
+
+function setMode(m){
+  modo=m;
+  document.querySelectorAll('#modeToggle button').forEach((b,i)=>{
+    b.classList.toggle('active',(i===0&&m==='tri')||(i===1&&m==='mono'));
+  });
+  calc();
+}
+
+function setPtipo(t){
+  ptipo=t;
+  document.querySelectorAll('#ptoggle button').forEach((b,i)=>{
+    b.classList.toggle('active',(i===0&&t==='act')||(i===1&&t==='kva'));
+  });
+  document.getElementById('unidad-wrap').style.display=t==='act'?'flex':'none';
+  document.getElementById('pot-label').textContent=t==='act'?'Potencia activa':'Potencia aparente (kVA)';
+  calc();
+}
+
+function setUnidad(u){
+  const inp=document.getElementById('potencia');
+  const v=parseFloat(inp.value)||0;
+  if(u==='kw'&&unidad==='hp') inp.value=(v*HP2KW).toFixed(2);
+  if(u==='hp'&&unidad==='kw') inp.value=(v/HP2KW).toFixed(2);
+  unidad=u; applyUnidad(); calc();
+}
+
+function setInst(i){
+  inst=i;
+  ['nm','m','bt'].forEach(k=>document.getElementById('btn-'+k).classList.toggle('active',k===i));
+  document.getElementById('inst-note').textContent=INST_NOTES[i];
+  calc();
+}
+
+function updateCalibre(){
+  const mat=document.getElementById('material').value;
+  const sel=document.getElementById('calibre');
+  const prev=sel.value; sel.innerHTML='';
+  Object.entries(NEC9).forEach(([k,v])=>{
+    if(mat==='al'&&v[2]===null)return;
+    const o=document.createElement('option');
+    o.value=k;o.textContent=k;
+    if(k===prev)o.selected=true;
+    sel.appendChild(o);
+  });
+  if(!sel.value)sel.value='2/0 AWG';
+}
+
+function calc(){
+  const pot=parseFloat(document.getElementById('potencia').value)||0;
+  const Vn =parseFloat(document.getElementById('vn').value)||1;
+  const fp =parseFloat(document.getElementById('fp').value)||0.85;
+  const L  =parseFloat(document.getElementById('longitud').value)||0;
+  const cpf=parseInt(document.getElementById('cpf').value)||1;
+  const mat=document.getElementById('material').value;
+  const cal=document.getElementById('calibre').value;
+  const d=NEC9[cal];const amp=AMP90[cal];
+  if(!d||!amp)return;
+
+  let kw,kva,hp;
+  if(ptipo==='act'){
+    if(unidad==='hp'){hp=pot;kw=pot*HP2KW;}else{kw=pot;hp=pot/HP2KW;}
+    kva=kw/fp;
+  }else{kva=pot;kw=kva*fp;hp=kw/HP2KW;}
+  const I=modo==='tri'?(kva*1000)/(Math.sqrt(3)*Vn):(kva*1000)/Vn;
+
+  document.getElementById('show-hp').textContent=hp.toFixed(1);
+  document.getElementById('show-kw').textContent=kw.toFixed(1);
+  document.getElementById('show-kva').textContent=kva.toFixed(1);
+  document.getElementById('show-i').textContent=I.toFixed(1)+' A';
+
+  const ri=inst==='m'?1:0;
+  const R_km=mat==='cu'?d[ri]:d[2+ri];
+  const X_nm=d[4];
+  const X_km=inst==='bt'?X_nm*1.15:(inst==='m'?d[5]:X_nm);
+  const R=R_km/cpf,X=X_km/cpf;
+  const Zef=Math.sqrt(R*R+X*X);
+  const senPhi=Math.sqrt(Math.max(0,1-fp*fp));
+
+  document.getElementById('show-r').textContent=R_km.toFixed(4);
+  document.getElementById('show-x').textContent=X_km.toFixed(4);
+  document.getElementById('show-z').textContent=Zef.toFixed(4);
+
+  // Ampacidad
+  const ampVal=mat==='cu'?amp[0]:amp[1];
+  const ampTotal=ampVal?ampVal*cpf:null;
+  const alertEl=document.getElementById('amp-alert');
+  const ampFill=document.getElementById('amp-fill');
+  if(ampTotal){
+    const pct=(I/ampTotal)*100;
+    document.getElementById('amp-max-label').textContent='Ampacidad: '+ampTotal+' A ('+ampVal+' × '+cpf+')';
+    document.getElementById('amp-pct-label').textContent=I.toFixed(1)+' / '+ampTotal+' A ('+pct.toFixed(1)+'%)';
+    ampFill.style.width=Math.min(pct,100).toFixed(1)+'%';
+    if(pct<=80){ampFill.style.background='#2e9e6e';alertEl.className='amp-alert ok show';alertEl.textContent='✓ Corriente segura: '+pct.toFixed(1)+'% de la ampacidad (límite NEC: 80%).';}
+    else if(pct<=100){ampFill.style.background='#e6a800';alertEl.className='amp-alert warn show';alertEl.textContent='⚠ Advertencia: '+pct.toFixed(1)+'% de la ampacidad. Verificar protecciones.';}
+    else{ampFill.style.background='#d32f2f';alertEl.className='amp-alert over show';alertEl.textContent='✗ Sobrecarga: '+I.toFixed(1)+' A supera la ampacidad de '+ampTotal+' A. Aumente el calibre o agregue conductores.';}
+  }else{
+    document.getElementById('amp-max-label').textContent='No disponible para Al en este calibre';
+    document.getElementById('amp-pct-label').textContent='—';
+    ampFill.style.width='0%';alertEl.className='amp-alert';
+  }
+
+  // Caída de tensión
+  const kV=Vn/1000;
+  const k=(R*fp+X*senPhi)/(10.5*kV*kV);
+  const L_km=L/1000;
+  const dVpct=kva*L_km*k;
+  const dV=(dVpct/100)*Vn;
+  const Vf=Vn-dV;
+
+  document.getElementById('res-pct').textContent=dVpct.toFixed(2)+'%';
+  document.getElementById('res-dv').textContent=dV.toFixed(2)+' V';
+  document.getElementById('res-vf').textContent=Vf.toFixed(1)+' V';
+  document.getElementById('res-k').textContent=k.toFixed(5);
+
+  const dvPct=Math.min(dVpct/5*100,100);
+  const dvFill=document.getElementById('dv-fill');
+  dvFill.style.width=dvPct.toFixed(1)+'%';
+  let color,label,estado;
+  if(dVpct<=3){color='#2e9e6e';label='Aceptable';estado='✓ Dentro del límite recomendado';}
+  else if(dVpct<=5){color='#e6a800';label='⚠ Límite';estado='Cerca del máximo permitido';}
+  else{color='#d32f2f';label='✗ Fuera de norma';estado='Supera el 5% — revisar diseño';}
+  dvFill.style.background=color;
+  const sl=document.getElementById('status-lbl');
+  sl.textContent=label;sl.style.color=color;
+  document.getElementById('res-estado').textContent=estado;
+
+  // Fórmula
+  const modoStr=modo==='tri'?'Trifásico':'Monofásico';
+  const convLine=ptipo==='act'
+    ?(unidad==='hp'
+      ?hp.toFixed(2)+' HP × 0.7457 = '+kw.toFixed(2)+' kW\nkVA = '+kw.toFixed(2)+' / cosφ('+fp+') = '+kva.toFixed(2)+' kVA'
+      :kw.toFixed(2)+' kW  →  kVA = '+kw.toFixed(2)+' / cosφ('+fp+') = '+kva.toFixed(2)+' kVA')
+    :'kVA = '+kva.toFixed(2)+'  →  kW = '+kva.toFixed(2)+' × '+fp+' = '+kw.toFixed(2)+' kW';
+  const iLine=modo==='tri'
+    ?'I = '+kva.toFixed(2)+'×1000 / (1.732×'+Vn+') = '+I.toFixed(2)+' A'
+    :'I = '+kva.toFixed(2)+'×1000 / '+Vn+' = '+I.toFixed(2)+' A';
+  const xNote=inst==='bt'?' (×1.15 bandeja)':' (NEC T9)';
+  document.getElementById('formula-box').textContent=
+'[ '+modoStr+' ]\n'+convLine+'\n'+iLine+
+'\n\nR='+R.toFixed(4)+'  X='+X_km.toFixed(4)+xNote+'\n\nk = (R×cosφ + X×senφ) / (10.5×kV²)\n  = '+k.toFixed(6)+
+'\n\nΔV% = kVA × L(km) × k\n     = '+kva.toFixed(2)+' × '+L_km.toFixed(4)+' × '+k.toFixed(6)+'\n     = '+dVpct.toFixed(3)+'%';
+}
+
+updateCalibre();
+document.getElementById('calibre').value='2/0 AWG';
+setInst('nm');
+setPtipo('act');
+document.querySelectorAll('#modeToggle button')[0].classList.add('active');
+unidad='hp'; applyUnidad(); calc();
+</script>
+</body>
+</html>
